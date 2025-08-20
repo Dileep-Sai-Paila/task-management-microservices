@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"user_service/internal/usecase"
-	pb "user_service/proto" // to import the generated protobuf code
+	pb "user_service/proto"
 )
 
 type UserServer struct {
@@ -15,7 +15,6 @@ func NewUserServer(uc usecase.UserUsecase) *UserServer {
 	return &UserServer{userUsecase: uc}
 }
 
-// implementation of the GetUser RPC method.
 func (s *UserServer) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.GetUserResponse, error) {
 	userID := req.GetId()
 

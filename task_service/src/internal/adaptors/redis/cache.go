@@ -48,3 +48,12 @@ func (c *Cache) GetUserValidation(ctx context.Context, userID int32) (bool, erro
 	// If we are getting here, err was nil, meaning the key exists => cache hit
 	return true, nil
 }
+
+// to send a message to the task_notifications channel.
+func (c *Cache) PublishTaskNotification(ctx context.Context, message string) error {
+	err := c.client.Publish(ctx, "task_notifications", message).Err()
+	if err != nil {
+		return fmt.Errorf("could not publish task notification: %w", err)
+	}
+	return nil
+}

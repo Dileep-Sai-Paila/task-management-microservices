@@ -29,4 +29,5 @@ type UserServiceClient interface {
 type Cache interface {
 	SetUserValidation(ctx context.Context, userID int32) error
 	GetUserValidation(ctx context.Context, userID int32) (bool, error)
+	PublishTaskNotification(ctx context.Context, message string) error
 }

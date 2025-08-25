@@ -5,3 +5,5 @@ app.env
 *.exe
 user-service
 task-service
+postgres-data/
+.env

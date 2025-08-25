@@ -50,6 +50,11 @@ func (uc *taskUsecase) CreateTask(ctx context.Context, task *tasks.Task) error {
 		return fmt.Errorf("could not create task in repository: %w", err)
 	}
 
+	notificationMsg := fmt.Sprintf("Task '%s' created for user %d.", task.Title, task.UserID)
+	if err := uc.cache.PublishTaskNotification(ctx, notificationMsg); err != nil {
+		log.Printf("Failed to publish task creation notification: %v", err)
+	}
+
 	return nil
 }
 
@@ -65,6 +70,12 @@ func (uc *taskUsecase) UpdateTask(ctx context.Context, task *tasks.Task) (*tasks
 	updatedTask, err := uc.taskRepo.UpdateTask(ctx, task)
 	if err != nil {
 		return nil, fmt.Errorf("could not update task: %w", err)
+	}
+
+	// to publish the notification message after updating the task succesfully
+	notificationMsg := fmt.Sprintf("Task %d updated. New status: %s.", updatedTask.ID, updatedTask.Status)
+	if err := uc.cache.PublishTaskNotification(ctx, notificationMsg); err != nil {
+		log.Printf("Failed to publish task update notification: %v", err)
 	}
 	return updatedTask, nil
 }

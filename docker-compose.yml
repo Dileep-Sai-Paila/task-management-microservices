@@ -1,0 +1,56 @@
+services:
+  postgres-db:
+    image: postgres:13-alpine
+    container_name: postgres-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: user_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  redis-cache:
+    image: redis:6-alpine
+    container_name: redis-cache
+    ports:
+      - "6379:6379"
+
+  user-service:
+    build: ./user_service
+    container_name: user-service
+    ports:
+      - "8080:8080"
+      - "9090:9090"
+    environment:
+      DB_SOURCE: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/user_db?sslmode=disable"
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+    depends_on:
+      - postgres-db
+
+  task-service:
+    build: ./task_service
+    container_name: task-service
+    ports:
+      - "8081:8081"
+    environment:
+      DB_SOURCE: "postgresql://postgres:25012004@postgres-db:5432/task_db?sslmode=disable"
+      USER_SERVICE_GRPC_ADDRESS: "user-service:9090"
+      REDIS_ADDRESS: "redis-cache:6379"
+    depends_on:
+      - postgres-db
+      - redis-cache
+      - user-service
+
+  notification-service:
+    build: ./notification_service
+    container_name: notification-service
+    environment:
+      REDIS_ADDRESS: "redis-cache:6379"
+    depends_on:
+      redis-cache:
+        condition: service_started
+
+volumes:
+  postgres-data:

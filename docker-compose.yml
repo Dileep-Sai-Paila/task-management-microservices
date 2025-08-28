@@ -10,6 +10,12 @@ services:
       - "5432:5432"
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
+      - ./init-db.sh:/docker-entrypoint-initdb.d/init-db.sh
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   redis-cache:
     image: redis:6-alpine
@@ -27,7 +33,8 @@ services:
       DB_SOURCE: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/user_db?sslmode=disable"
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
     depends_on:
-      - postgres-db
+      postgres-db:
+        condition: service_healthy
 
   task-service:
     build: ./task_service
@@ -35,13 +42,16 @@ services:
     ports:
       - "8081:8081"
     environment:
-      DB_SOURCE: "postgresql://postgres:25012004@postgres-db:5432/task_db?sslmode=disable"
+      DB_SOURCE: "postgresql://postgres:${POSTGRES_PASSWORD}@postgres-db:5432/task_db?sslmode=disable"
       USER_SERVICE_GRPC_ADDRESS: "user-service:9090"
       REDIS_ADDRESS: "redis-cache:6379"
     depends_on:
-      - postgres-db
-      - redis-cache
-      - user-service
+      postgres-db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+      user-service:
+        condition: service_started
 
   notification-service:
     build: ./notification_service
